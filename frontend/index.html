@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoiceGuard AI — Synthetic Voice & Deepfake Detection Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Persistent Left Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">V</div>
+        <div class="brand-text">
+          <div class="brand-name">VOICEGUARD <em>AI</em></div>
+          <div class="brand-tagline">SPEECH INTELLIGENCE</div>
+        </div>
+      </div>
+
+      <div class="nav-section-title">Forensic Suite</div>
+      <ul class="nav-list">
+        <li class="nav-item active" data-view="overview">
+          <a href="#overview"><span class="nav-icon">◫</span> <span>Overview</span></a>
+        </li>
+        <li class="nav-item" data-view="analyzer">
+          <a href="#analyzer"><span class="nav-icon">⌁</span> <span>Voice Analyzer</span></a>
+        </li>
+        <li class="nav-item" data-view="history">
+          <a href="#history"><span class="nav-icon">↗</span> <span>Detection History</span></a>
+        </li>
+        <li class="nav-item" data-view="analytics">
+          <a href="#analytics"><span class="nav-icon">◈</span> <span>Research Analytics</span></a>
+        </li>
+      </ul>
+
+      <div class="nav-section-title">Engine & Data</div>
+      <ul class="nav-list">
+        <li class="nav-item" data-view="models">
+          <a href="#models"><span class="nav-icon">⚙</span> <span>Model Management</span></a>
+        </li>
+        <li class="nav-item" data-view="dataset">
+          <a href="#dataset"><span class="nav-icon">▤</span> <span>Dataset (ASVspoof)</span></a>
+        </li>
+        <li class="nav-item" data-view="settings">
+          <a href="#settings"><span class="nav-icon">✦</span> <span>Settings</span></a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="system-badge">
+          <span class="pulse-dot"></span>
+          <span id="sidebarStatusText">CPU Inference Ready</span>
+        </div>
+        <div>VoiceGuard Core · v2.4</div>
+        <div style="color: var(--text-muted); font-size: 10px;">ASVspoof 2019 LA Standard</div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Top Navigation Bar -->
+      <header class="top-header">
+        <div class="header-left">
+          <span class="breadcrumb" id="viewBreadcrumb">Forensic Suite / Overview</span>
+          <h1 class="header-title" id="viewHeaderTitle">Operational Dashboard</h1>
+        </div>
+        <div class="header-right">
+          <div class="model-pill">
+            <span class="status-indicator" id="headerModelStatusDot"></span>
+            <span id="headerModelName">Loading Model...</span>
+          </div>
+          <button class="btn-primary" id="btnQuickAnalyze" style="padding: 7px 14px; font-size: 12px;">+ Analyze Audio</button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: OVERVIEW / DASHBOARD -->
+      <section class="view-content active-view" id="view-overview">
+        <div class="hero-banner">
+          <div class="hero-text">
+            <span class="hero-tag">LIGHTWEIGHT ACOUSTIC FORENSICS</span>
+            <h2 class="hero-title">Trust the voice.<br><em>Verify the acoustic signal.</em></h2>
+            <p class="hero-desc">
+              High-precision detection of Text-to-Speech (TTS) and Voice Conversion (VC) deepfakes using classical machine learning and 80-dimensional MFCC acoustic feature vectors. Operates efficiently on ordinary CPU architectures.
+            </p>
+            <div style="display: flex; gap: 12px;">
+              <button class="btn-primary" onclick="switchView('analyzer')">Launch Voice Analyzer ↗</button>
+              <button class="btn-secondary" onclick="switchView('analytics')">View Research Benchmarks</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Key Metrics Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Analyses</div>
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-subtext">Processed voice samples</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Synthetic Detections</div>
+            <div class="stat-value red" id="statSynthetic">—</div>
+            <div class="stat-subtext" id="statSyntheticPct">— % of analyses</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Genuine Human Voices</div>
+            <div class="stat-value lime" id="statGenuine">—</div>
+            <div class="stat-subtext" id="statGenuinePct">— % of analyses</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Mean CPU Latency</div>
+            <div class="stat-value cyan" id="statLatency">—</div>
+            <div class="stat-subtext">Milliseconds per recording</div>
+          </div>
+        </div>
+
+        <!-- Charts & Activity Row -->
+        <div class="dashboard-row">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Detection Classification Ratio</div>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">Real-time</span>
+            </div>
+            <div style="position: relative; height: 220px; display: flex; align-items: center; justify-content: center;">
+              <canvas id="overviewRatioChart"></canvas>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 24px; font-family: var(--font-mono); font-size: 11px; margin-top: 14px;">
+              <span style="color: var(--accent-lime);">● Genuine Speech</span>
+              <span style="color: var(--danger-red);">● Synthetic Speech</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">Recent Detections</div>
+              <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="loadDashboardStats()">Refresh ↻</button>
+            </div>
+            <div class="table-responsive" style="max-height: 240px; overflow-y: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Audio File</th>
+                    <th>Classification</th>
+                    <th>Confidence</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewRecentTable">
+                  <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading recent analyses...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: VOICE ANALYZER -->
+      <section class="view-content" id="view-analyzer">
+        <div class="analyzer-grid">
+          <!-- Audio Input Card -->
+          <div class="upload-card">
+            <div class="panel-header">
+              <div class="panel-title">Audio Input Signal</div>
+              <select id="analyzerModelSelect" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; font-size: 11px; font-family: var(--font-mono);">
+                <option value="best_model">Selected Best Model</option>
+                <option value="Logistic Regression">Logistic Regression</option>
+                <option value="SVM (RBF Kernel)">SVM (RBF Kernel)</option>
+                <option value="Random Forest">Random Forest</option>
+              </select>
+            </div>
+
+            <!-- Drag & Drop Area -->
+            <div class="dropzone" id="audioDropzone">
+              <div class="drop-icon">↑</div>
+              <div class="drop-title">Drop audio recording here</div>
+              <div class="drop-sub">WAV, FLAC, MP3, OGG, M4A up to 25 MB</div>
+              <button class="btn-secondary" type="button" onclick="document.getElementById('audioFileInput').click()">Browse Files</button>
+              <input type="file" id="audioFileInput" class="file-input" accept="audio/*,.flac,.wav,.mp3,.ogg,.m4a">
+            </div>
+
+            <!-- Live Microphone Recording Section -->
+            <div class="mic-section">
+              <div class="mic-header">
+                <div class="mic-title">
+                  <span style="color: var(--danger-red);">●</span> Browser Live Microphone
+                </div>
+                <div class="mic-timer" id="micTimer">00:00</div>
+              </div>
+              <canvas class="mic-canvas" id="micWaveformCanvas"></canvas>
+              <div class="mic-controls">
+                <button class="btn-primary" id="btnRecordStart" style="font-size: 12px; padding: 6px 14px;">Record Mic</button>
+                <button class="btn-secondary" id="btnRecordPause" style="font-size: 12px; padding: 6px 12px; display: none;">Pause</button>
+                <button class="btn-danger" id="btnRecordStop" style="font-size: 12px; padding: 6px 14px; display: none;">Stop</button>
+              </div>
+            </div>
+
+            <!-- Audio Preview Player -->
+            <div class="audio-preview-box" id="audioPreviewBox" style="display: none;">
+              <div class="audio-preview-header">
+                <span class="audio-file-name" id="previewFileName">filename.wav</span>
+                <button class="btn-secondary" id="btnRemoveAudio" style="padding: 2px 8px; font-size: 11px;">Remove ✕</button>
+              </div>
+              <audio id="audioElement" controls></audio>
+              <div class="audio-file-meta" id="previewFileMeta" style="margin-top: 6px;">Duration: — | Size: —</div>
+            </div>
+
+            <!-- Analyze Button -->
+            <button class="btn-primary" id="btnRunAnalysis" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px;" disabled>
+              EXECUTE VOICE ANALYSIS →
+            </button>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 12px; text-align: center;">
+              ⌑ Audio is processed in memory on your host CPU and automatically deleted after feature extraction.
+            </p>
+          </div>
+
+          <!-- Detection Result Card -->
+          <div class="result-card">
+            <div class="panel-header">
+              <div class="panel-title">Forensic Assessment</div>
+              <span id="resultTimestamp" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">Awaiting Signal</span>
+            </div>
+
+            <div id="resultAwaiting" class="result-placeholder">
+              <div style="font-size: 40px; margin-bottom: 12px; color: var(--text-muted);">◎</div>
+              <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--text-primary);">Awaiting Audio Sample</div>
+              <p style="font-size: 13px; max-width: 320px; margin: 0 auto;">Upload an audio file or record speech via microphone to perform deepfake verification.</p>
+            </div>
+
+            <div id="resultLoading" class="result-placeholder" style="display: none;">
+              <div class="radar-spinner"></div>
+              <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--text-primary);">Analyzing Acoustic Features</div>
+              <p style="font-size: 13px; color: var(--text-secondary);">Extracting 80-D MFCCs, computing deltas, and evaluating ML decision boundaries...</p>
+            </div>
+
+            <!-- Real Results Container -->
+            <div id="resultContainer" style="display: none;">
+              <div id="resultBadge" class="result-header-badge synthetic">
+                SYNTHETIC SPEECH DETECTED
+              </div>
+
+              <div class="result-confidence-row">
+                <span class="confidence-val" id="resultConfidenceVal">—%</span>
+                <span class="confidence-label">Model Confidence</span>
+              </div>
+
+              <div class="score-bar-wrapper">
+                <div class="score-bar-labels">
+                  <span style="color: var(--accent-lime);">Bonafide: <b id="scoreValGenuine">—%</b></span>
+                  <span style="color: var(--danger-red);">Spoof: <b id="scoreValSynthetic">—%</b></span>
+                </div>
+                <div class="score-track">
+                  <div class="score-fill-genuine" id="scoreBarGenuine" style="width: 50%;"></div>
+                  <div class="score-fill-synthetic" id="scoreBarSynthetic" style="width: 50%;"></div>
+                </div>
+              </div>
+
+              <div class="result-notice" id="resultNoticeText">
+                Potential synthetic or manipulated speech detected. Verify the speaker through an independent communication channel.
+              </div>
+
+              <div class="meta-stats-grid">
+                <div class="meta-item">
+                  <span class="meta-item-label">MODEL</span>
+                  <span class="meta-item-value" id="resultModelName">—</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item-label">TOTAL LATENCY</span>
+                  <span class="meta-item-value" id="resultLatency">— ms</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item-label">ACOUSTIC DIMS</span>
+                  <span class="meta-item-value" id="resultFeatureDims">80-D MFCC</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item-label">INFERENCE TIME</span>
+                  <span class="meta-item-value" id="resultInferenceMs">— ms</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item-label">CLIP DURATION</span>
+                  <span class="meta-item-value" id="resultDuration">— s</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-item-label">RECORDING ID</span>
+                  <span class="meta-item-value" id="resultId">—</span>
+                </div>
+              </div>
+
+              <div class="disclaimer-box" id="resultDisclaimerText">
+                Notice: VoiceGuard AI is a lightweight research screening system based on handcrafted MFCC acoustic features. Confidence scores represent statistical correlation with ASVspoof training patterns, not certified biometric authentication.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audio Visualizations Section -->
+        <div class="vis-section" id="visualizationSection" style="display: none;">
+          <div class="vis-card">
+            <div class="vis-title">
+              <span>Time-Domain Waveform Envelope</span>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);" id="visDurationText">—</span>
+            </div>
+            <canvas class="vis-canvas" id="visWaveformCanvas"></canvas>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="vis-card">
+              <div class="vis-title">
+                <span>Mel Spectrogram (dB Energy)</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">40 Mel Bands</span>
+              </div>
+              <canvas class="vis-canvas" id="visSpectrogramCanvas"></canvas>
+            </div>
+            <div class="vis-card">
+              <div class="vis-title">
+                <span>MFCC Acoustic Coefficient Heatmap</span>
+                <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">20 Cepstral Coefficients</span>
+              </div>
+              <canvas class="vis-canvas" id="visMfccCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: DETECTION HISTORY -->
+      <section class="view-content" id="view-history">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Forensic Audit Log</div>
+            <div style="display: flex; gap: 8px;">
+              <a href="/api/history/export" class="btn-secondary" style="font-size: 12px; padding: 6px 12px;">Export CSV ⤓</a>
+              <button class="btn-danger" id="btnClearHistory" style="font-size: 12px; padding: 6px 12px;">Clear Log ✕</button>
+            </div>
+          </div>
+
+          <!-- Filter & Search Controls -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="">All Results</button>
+              <button class="filter-btn" data-filter="genuine">Genuine Only</button>
+              <button class="filter-btn" data-filter="synthetic">Synthetic Only</button>
+            </div>
+            <input type="text" class="search-input" id="historySearchInput" placeholder="Search by filename or ID...">
+          </div>
+
+          <!-- History Data Table -->
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Timestamp (UTC)</th>
+                  <th>Filename</th>
+                  <th>Classification</th>
+                  <th>Confidence</th>
+                  <th>Spoof Score</th>
+                  <th>Model</th>
+                  <th>Latency</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Loading audit history...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-family: var(--font-mono); font-size: 12px;">
+            <span id="historyCountText">Showing 0 of 0 records</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-secondary" id="btnHistPrev" style="padding: 4px 10px;">← Prev</button>
+              <button class="btn-secondary" id="btnHistNext" style="padding: 4px 10px;">Next →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: RESEARCH ANALYTICS -->
+      <section class="view-content" id="view-analytics">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Classical ML Benchmark & Comparison</div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Identical 80-D MFCC feature evaluation across Logistic Regression, SVM, and Random Forest on the ASVspoof 2019 LA development set.
+              </div>
+            </div>
+            <button class="btn-secondary" onclick="loadResearchAnalytics()" style="font-size: 12px; padding: 6px 12px;">Refresh ↻</button>
+          </div>
+
+          <!-- Empty / Setup Warning if no models -->
+          <div id="analyticsUninitializedWarning" class="result-notice" style="display: none; background: rgba(255, 191, 105, 0.08); border-left-color: var(--warning-amber);">
+            <strong>Models Not Yet Benchmarked:</strong> No benchmark data is recorded in the artifacts directory.
+            Please visit the <a href="#models" onclick="switchView('models')" style="color: var(--accent-lime); font-weight: 700;">Model Management</a> tab to run model training on the ASVspoof 2019 LA dataset.
+          </div>
+
+          <!-- Comparison Table -->
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Algorithm</th>
+                  <th>Accuracy</th>
+                  <th>Spoof F1-Score*</th>
+                  <th>Spoof Precision</th>
+                  <th>Spoof Recall</th>
+                  <th>Genuine Recall</th>
+                  <th>Equal Error Rate (EER)</th>
+                  <th>ROC-AUC</th>
+                  <th>CPU Latency</th>
+                  <th>Training Time</th>
+                </tr>
+              </thead>
+              <tbody id="analyticsComparisonTable">
+                <tr><td colspan="10" style="text-align: center; color: var(--text-muted);">Loading model benchmarks...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 10px;">
+            *Primary selection metric: Development-set Spoof-Class F1-score. Evaluation partition is kept isolated and unobserved during selection.
+          </div>
+        </div>
+
+        <!-- ROC & Latency Charts Row -->
+        <div class="dashboard-row">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">ROC Curves (Receiver Operating Characteristic)</div>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">True vs False Positive Rate</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="analyticsRocChart"></canvas>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">CPU Inference Latency Benchmark</div>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">Milliseconds per sample</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="analyticsLatencyChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confusion Matrices Row -->
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div class="panel-title">Development Set Confusion Matrices</div>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">Binary Class Distribution [Bonafide vs Spoof]</span>
+          </div>
+          <div class="cm-container" id="analyticsConfusionMatrices">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- 80-D MFCC Feature Specification -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">80-Dimensional Acoustic Feature Specification</div>
+            <span class="badge" style="background: var(--bg-secondary); border: 1px solid var(--border);">Librosa 16 kHz</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-lime); margin-bottom: 4px;">Dims 1-20</div>
+              <div style="font-weight: 700; font-size: 13px;">MFCC Mean</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Captures baseline spectral envelope and vocal tract frequency distribution.</p>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-accent); margin-bottom: 4px;">Dims 21-40</div>
+              <div style="font-weight: 700; font-size: 13px;">MFCC Std Dev</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Quantifies spectral variance and vocal dynamic range across time frames.</p>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--warning-amber); margin-bottom: 4px;">Dims 41-60</div>
+              <div style="font-weight: 700; font-size: 13px;">Delta-MFCC Mean</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">First-order temporal derivative reflecting phonetic transition speeds.</p>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <div style="font-family: var(--font-mono); font-size: 11px; color: var(--danger-red); margin-bottom: 4px;">Dims 61-80</div>
+              <div style="font-weight: 700; font-size: 13px;">Delta-MFCC Std Dev</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Measures transition velocity consistency, exposing synthetic speech artifacts.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: MODEL MANAGEMENT -->
+      <section class="view-content" id="view-models">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Active Inference Model</div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Select which trained classifier services real-time audio detection requests.</div>
+            </div>
+            <button class="btn-secondary" onclick="loadModelsView()" style="font-size: 12px; padding: 6px 12px;">Refresh ↻</button>
+          </div>
+          <div id="modelsCardsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <!-- Dynamically populated model cards -->
+          </div>
+        </div>
+
+        <!-- Background Training Trigger & Console -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Train & Benchmark All Three Classifiers</div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Executes the standardized training pipeline in an asynchronous worker thread.
+              </div>
+            </div>
+            <button class="btn-primary" id="btnStartTraining">▶ Start Background Training</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px;">
+            <div>
+              <label style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Max Train Samples (Optional)</label>
+              <input type="number" id="inputMaxTrain" class="search-input" style="width: 100%;" placeholder="All available (default)">
+            </div>
+            <div>
+              <label style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Max Dev Samples (Optional)</label>
+              <input type="number" id="inputMaxDev" class="search-input" style="width: 100%;" placeholder="All available (default)">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); cursor: pointer; height: 36px;">
+                <input type="checkbox" id="checkUseCache" checked> Use Feature Cache (.npz)
+              </label>
+            </div>
+          </div>
+
+          <!-- Training Status Box -->
+          <div class="training-box" id="trainingStatusBox">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 12px;">
+              <span>Status: <b id="trainingStatusText">Idle</b></span>
+              <span id="trainingProgressPercent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="trainingProgressBar"></div>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-bottom: 10px;" id="trainingCurrentStepText">
+              No training active.
+            </div>
+            <div class="log-console" id="trainingLogConsole">Training logs will appear here when a training run is initiated.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: DATASET MANAGEMENT -->
+      <section class="view-content" id="view-dataset">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">ASVspoof 2019 Logical Access (LA) Corpus</div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                Standardized benchmark dataset containing genuine speech and spoofed speech from 17 speech synthesis (TTS) and voice conversion (VC) algorithms.
+              </div>
+            </div>
+            <button class="btn-secondary" onclick="loadDatasetInfo()" style="font-size: 12px; padding: 6px 12px;">Scan Directory ↻</button>
+          </div>
+
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 20px; font-family: var(--font-mono); font-size: 12px;">
+            <div style="color: var(--text-muted); margin-bottom: 4px;">CONFIGURED DATASET ROOT:</div>
+            <div id="datasetRootPathDisplay" style="color: var(--accent-lime); word-break: break-all;">—</div>
+            <div style="margin-top: 8px; color: var(--text-secondary);">
+              To change this location, set the <code style="color: var(--warning-amber);">ASVSPOOF_ROOT</code> environment variable.
+            </div>
+          </div>
+
+          <!-- Partition Summary Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;" id="datasetPartitionsGrid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Dataset Download & Setup Guide</div>
+          </div>
+          <div style="font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+            <p style="margin-bottom: 12px;">
+              The ASVspoof 2019 LA dataset is hosted by the University of Edinburgh DataShare archive:
+              <br>
+              <a href="https://datashare.ed.ac.uk/items/31074a11-b6f6-4e92-a4ad-07093f8c0c45" target="_blank" rel="noopener" style="color: var(--accent-lime); font-weight: 700;">
+                https://datashare.ed.ac.uk/items/31074a11-b6f6-4e92-a4ad-07093f8c0c45 ↗
+              </a>
+            </p>
+            <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+              <li>Download the official archive <code>LA.zip</code> (~25 GB compressed).</li>
+              <li>Extract into <code>backend/data/ASVspoof2019_LA</code> or an external drive.</li>
+              <li>Ensure the protocols folder containing <code>ASVspoof2019.LA.cm.train.trn.txt</code> and <code>ASVspoof2019.LA.cm.dev.trl.txt</code> is present.</li>
+              <li>Click <strong>Scan Directory ↻</strong> above to verify partition indices.</li>
+              <li>Head to <strong>Model Management</strong> to trigger the training benchmark.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 7: SETTINGS -->
+      <section class="view-content" id="view-settings">
+        <div class="panel" style="margin-bottom: 24px;">
+          <div class="panel-header">
+            <div class="panel-title">Forensic Engine Configuration</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 20px; max-width: 600px;">
+            <div>
+              <label style="font-weight: 700; display: block; margin-bottom: 6px;">Classification Decision Threshold</label>
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <input type="range" id="settingThreshold" min="0.10" max="0.90" step="0.05" value="0.50" style="flex: 1;">
+                <span id="settingThresholdVal" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; width: 45px;">0.50</span>
+              </div>
+              <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                Probability threshold for flagging audio as synthetic. Default 0.50 is balanced across equal cost.
+              </p>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+              <label style="font-weight: 700; display: block; margin-bottom: 6px;">Audio Retention Policy</label>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                By default, VoiceGuard AI automatically deletes all uploaded audio files immediately after feature extraction to safeguard caller privacy.
+              </p>
+              <span class="badge badge-genuine">ZERO PERMANENT RETENTION ENABLED</span>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+              <label style="font-weight: 700; display: block; margin-bottom: 6px;">Processing Constraints</label>
+              <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px;">
+                <div>• Max Upload Size: <b>25 MB</b></div>
+                <div>• Max Clip Analysis Duration: <b>30 Seconds</b></div>
+                <div>• Target Sampling Frequency: <b>16,000 Hz</b></div>
+                <div>• Feature Vector Size: <b>80 Dimensions</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">System & Environment Diagnostics</div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-family: var(--font-mono); font-size: 12px;">
+            <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span style="color: var(--text-muted); display: block;">INFERENCE HARDWARE</span>
+              <strong style="color: var(--text-primary);">Standard Host CPU</strong>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span style="color: var(--text-muted); display: block;">BACKEND FRAMEWORK</span>
+              <strong style="color: var(--text-primary);">Flask 3.1 + REST API</strong>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span style="color: var(--text-muted); display: block;">ACOUSTIC PROCESSING</span>
+              <strong style="color: var(--text-primary);">Librosa & Soundfile</strong>
+            </div>
+            <div style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+              <span style="color: var(--text-muted); display: block;">DATABASE ENGINE</span>
+              <strong style="color: var(--text-primary);">SQLite 3</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- History Detail Inspection Modal -->
+  <div class="modal-backdrop" id="historyModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-weight: 800; font-size: 16px;">Analysis Inspection</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modalBody" style="font-family: var(--font-mono); font-size: 12px; display: flex; flex-direction: column; gap: 10px;">
+        <!-- Dynamically populated -->
+      </div>
+      <div style="margin-top: 20px; text-align: right;">
+        <button class="btn-secondary" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

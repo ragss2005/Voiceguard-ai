@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  voiceguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: voiceguard-ai
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - ASVSPOOF_ROOT=/data/ASVspoof2019_LA
+      - MAX_UPLOAD_MB=25
+      - RETAIN_UPLOADED_AUDIO=false
+    volumes:
+      - ./backend/artifacts:/app/backend/artifacts
+      - ./backend/voiceguard.sqlite3:/app/backend/voiceguard.sqlite3
+      - ./backend/data/ASVspoof2019_LA:/data/ASVspoof2019_LA:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
